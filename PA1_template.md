@@ -5,6 +5,10 @@ date: "2023-01-05"
 output: html_document
 ---
 
+Libraries:
+
+
+
 ## Loading and preprocessing the data
 Data was obtained forking the repository [https://github.com/rdpeng/RepData_PeerAssessment1](https://github.com/rdpeng/RepData_PeerAssessment1).
 
@@ -109,45 +113,43 @@ mean(is.na(df$steps))
 
 ## What is mean total number of steps taken per day?
 
-Total number of steps counted:
-
+`
+Group steps by date and then summarize mean and sum:
 
 ```r
-sum(df$steps, na.rm = T)
+steps_day <- df %>% group_by(date) %>% summarise('steps_mean' = mean(steps, na.rm = T), 'steps_total' = sum(steps, na.rm = T))
 ```
 
-```
-## [1] 570608
-```
+
+
 Histogram of steps per day:
 
 
 ```r
-library(ggplot2)
-p1 <- ggplot(df, aes(x=steps)) 
-p1 <- p1 + geom_histogram(bins = 100, na.rm = T)
+p1 <- ggplot(steps_day, aes(x=steps_total)) 
+p1 <- p1 + geom_histogram(bins = 30, na.rm = T)
 p1
 ```
 
-![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9-1.png)
+![plot of chunk unnamed-chunk-28](figure/unnamed-chunk-28-1.png)
 
 Mean and Median of steps:
 
 
 ```r
-mean(df$steps, na.rm = T)
+mean(steps_day$steps_total, na.rm = T)
 ```
 
 ```
-## [1] 37.3826
+## [1] 9354.23
 ```
 
 ```r
-median(df$steps, na.rm = T)
+median(steps_day$steps_total, na.rm = T)
 ```
 
 ```
-## [1] 0
+## [1] 10395
 ```
 
 
@@ -155,7 +157,6 @@ median(df$steps, na.rm = T)
 
 
 ```r
-library(dplyr)
 steps_interval <- df %>% group_by(interval) %>% summarise('steps_mean' = mean(steps, na.rm = T), 'steps_median' = median(steps, na.rm = T))
 summary(steps_interval)
 ```
@@ -178,17 +179,20 @@ p2 <- p2 + geom_line()
 p2
 ```
 
-![plot of chunk unnamed-chunk-12](figure/unnamed-chunk-12-1.png)
+![plot of chunk unnamed-chunk-31](figure/unnamed-chunk-31-1.png)
 
 Interval with maximum average of steps:
 
 
 ```r
-which.max(steps_interval$steps_mean)
+steps_interval[which.max(steps_interval$steps_mean),]
 ```
 
 ```
-## [1] 104
+## # A tibble: 1 × 3
+##   interval steps_mean steps_median
+##      <int>      <dbl>        <int>
+## 1      835       206.           19
 ```
 
 ## Imputing missing values
@@ -200,183 +204,106 @@ which.max(steps_interval$steps_mean)
 df1 <- left_join(df, steps_interval, by= "interval")
 df1$steps_no_na <- ifelse(is.na(df1$steps), df1$steps_mean, df1$steps)
 
-summary(df1)
+steps_day1 <- df1 %>% group_by(date) %>% summarise('steps_mean' = mean(steps_no_na, na.rm = T), 'steps_total' = sum(steps_no_na, na.rm = T))
+
+summary(steps_day1)
 ```
 
 ```
-##      steps             date               interval        steps_mean       steps_median   
-##  Min.   :  0.00   Min.   :2012-10-01   Min.   :   0.0   Min.   :  0.000   Min.   : 0.000  
-##  1st Qu.:  0.00   1st Qu.:2012-10-16   1st Qu.: 588.8   1st Qu.:  2.486   1st Qu.: 0.000  
-##  Median :  0.00   Median :2012-10-31   Median :1177.5   Median : 34.113   Median : 0.000  
-##  Mean   : 37.38   Mean   :2012-10-31   Mean   :1177.5   Mean   : 37.383   Mean   : 3.962  
-##  3rd Qu.: 12.00   3rd Qu.:2012-11-15   3rd Qu.:1766.2   3rd Qu.: 52.835   3rd Qu.: 0.000  
-##  Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0   Max.   :206.170   Max.   :60.000  
-##  NA's   :2304                                                                             
-##   steps_no_na    
-##  Min.   :  0.00  
-##  1st Qu.:  0.00  
-##  Median :  0.00  
-##  Mean   : 37.38  
-##  3rd Qu.: 27.00  
-##  Max.   :806.00  
-## 
+##       date              steps_mean       steps_total   
+##  Min.   :2012-10-01   Min.   : 0.1424   Min.   :   41  
+##  1st Qu.:2012-10-16   1st Qu.:34.0938   1st Qu.: 9819  
+##  Median :2012-10-31   Median :37.3826   Median :10766  
+##  Mean   :2012-10-31   Mean   :37.3826   Mean   :10766  
+##  3rd Qu.:2012-11-15   3rd Qu.:44.4826   3rd Qu.:12811  
+##  Max.   :2012-11-30   Max.   :73.5903   Max.   :21194
 ```
 
 Histogram of steps per day, after replacing NA's:
 
 
 ```r
-library(ggplot2)
-p1 <- ggplot(df1, aes(x=steps_no_na)) 
+p1 <- ggplot(steps_day1, aes(x=steps_total)) 
 p1 <- p1 + geom_histogram(bins = 100, na.rm = T)
 p1
 ```
 
-![plot of chunk unnamed-chunk-15](figure/unnamed-chunk-15-1.png)
+![plot of chunk unnamed-chunk-34](figure/unnamed-chunk-34-1.png)
 
 
 Mean and Median of steps:
 
 
 ```r
-mean(df1$steps_no_na, na.rm = T)
+mean(steps_day1$steps_total, na.rm = T)
 ```
 
 ```
-## [1] 37.3826
-```
-
-```r
-median(df1$steps_no_na, na.rm = T)
-```
-
-```
-## [1] 0
-```
-
-There is no difference in mean and median (although the 3rd quantile is now 27, instead of 12)
-
-###Replacing NA's with median of interval:
-
-
-```r
-df2 <- left_join(df, steps_interval, by= "interval")
-df2$steps_no_na <- ifelse(is.na(df2$steps), df2$steps_median, df2$steps)
-#names(df2) <- c('steps', 'date', 'interval', 'steps_avg_interval', 'steps_no_na')
-summary(df2)
-```
-
-```
-##      steps             date               interval        steps_mean       steps_median   
-##  Min.   :  0.00   Min.   :2012-10-01   Min.   :   0.0   Min.   :  0.000   Min.   : 0.000  
-##  1st Qu.:  0.00   1st Qu.:2012-10-16   1st Qu.: 588.8   1st Qu.:  2.486   1st Qu.: 0.000  
-##  Median :  0.00   Median :2012-10-31   Median :1177.5   Median : 34.113   Median : 0.000  
-##  Mean   : 37.38   Mean   :2012-10-31   Mean   :1177.5   Mean   : 37.383   Mean   : 3.962  
-##  3rd Qu.: 12.00   3rd Qu.:2012-11-15   3rd Qu.:1766.2   3rd Qu.: 52.835   3rd Qu.: 0.000  
-##  Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0   Max.   :206.170   Max.   :60.000  
-##  NA's   :2304                                                                             
-##   steps_no_na 
-##  Min.   :  0  
-##  1st Qu.:  0  
-##  Median :  0  
-##  Mean   : 33  
-##  3rd Qu.:  8  
-##  Max.   :806  
-## 
-```
-
-Histogram of steps per day, after replacing NA's:
-
-
-```r
-library(ggplot2)
-p2 <- ggplot(df2, aes(x=steps_no_na)) 
-p2 <- p2 + geom_histogram(bins = 100, na.rm = T)
-p2
-```
-
-![plot of chunk unnamed-chunk-18](figure/unnamed-chunk-18-1.png)
-
-
-Mean and Median of steps:
-
-
-```r
-mean(df2$steps_no_na, na.rm = T)
-```
-
-```
-## [1] 32.99954
+## [1] 10766.19
 ```
 
 ```r
-median(df2$steps_no_na, na.rm = T)
+median(steps_day1$steps_total, na.rm = T)
 ```
 
 ```
-## [1] 0
+## [1] 10766.19
 ```
+
+Both mean and median increased.
+
 
 ###Replacing NA's with total of daily steps:
 
 
 ```r
-steps_day <- df %>% group_by(date) %>% summarise('steps_mean' = mean(steps, na.rm = T), 'steps_total' = sum(steps, na.rm = T))
 df3 <- left_join(df, steps_day, by= "date")
 df3$steps_no_na <- ifelse(is.na(df3$steps), df3$steps_total, df3$steps)
-#names(df2) <- c('steps', 'date', 'interval', 'steps_avg_interval', 'steps_no_na')
-summary(df3)
+
+steps_day3 <- df3 %>% group_by(date) %>% summarise('steps_mean' = mean(steps_no_na, na.rm = T), 'steps_total' = sum(steps_no_na, na.rm = T))
+
+summary(steps_day3)
 ```
 
 ```
-##      steps             date               interval        steps_mean       steps_total   
-##  Min.   :  0.00   Min.   :2012-10-01   Min.   :   0.0   Min.   : 0.1424   Min.   :    0  
-##  1st Qu.:  0.00   1st Qu.:2012-10-16   1st Qu.: 588.8   1st Qu.:30.6979   1st Qu.: 6778  
-##  Median :  0.00   Median :2012-10-31   Median :1177.5   Median :37.3785   Median :10395  
-##  Mean   : 37.38   Mean   :2012-10-31   Mean   :1177.5   Mean   :37.3826   Mean   : 9354  
-##  3rd Qu.: 12.00   3rd Qu.:2012-11-15   3rd Qu.:1766.2   3rd Qu.:46.1597   3rd Qu.:12811  
-##  Max.   :806.00   Max.   :2012-11-30   Max.   :2355.0   Max.   :73.5903   Max.   :21194  
-##  NA's   :2304                                           NA's   :2304                     
-##   steps_no_na    
-##  Min.   :  0.00  
-##  1st Qu.:  0.00  
-##  Median :  0.00  
-##  Mean   : 32.48  
-##  3rd Qu.:  0.00  
-##  Max.   :806.00  
-## 
+##       date              steps_mean     steps_total   
+##  Min.   :2012-10-01   Min.   : 0.00   Min.   :    0  
+##  1st Qu.:2012-10-16   1st Qu.:23.53   1st Qu.: 6778  
+##  Median :2012-10-31   Median :36.09   Median :10395  
+##  Mean   :2012-10-31   Mean   :32.48   Mean   : 9354  
+##  3rd Qu.:2012-11-15   3rd Qu.:44.48   3rd Qu.:12811  
+##  Max.   :2012-11-30   Max.   :73.59   Max.   :21194
 ```
 
 Histogram of steps per day, after replacing NA's:
 
 
 ```r
-library(ggplot2)
-p3 <- ggplot(df3, aes(x=steps_no_na)) 
+p3 <- ggplot(steps_day3, aes(x=steps_total)) 
 p3 <- p3 + geom_histogram(bins = 100, na.rm = T)
 p3
 ```
 
-![plot of chunk unnamed-chunk-21](figure/unnamed-chunk-21-1.png)
+![plot of chunk unnamed-chunk-37](figure/unnamed-chunk-37-1.png)
 
 
 Mean and Median of steps:
 
 
 ```r
-mean(df3$steps_no_na, na.rm = T)
+mean(steps_day3$steps_total, na.rm = T)
 ```
 
 ```
-## [1] 32.47996
+## [1] 9354.23
 ```
 
 ```r
-median(df3$steps_no_na, na.rm = T)
+median(steps_day3$steps_total, na.rm = T)
 ```
 
 ```
-## [1] 0
+## [1] 10395
 ```
 
 
@@ -384,7 +311,6 @@ median(df3$steps_no_na, na.rm = T)
 
 
 ```r
-library(lubridate)
 df4 <- df1[,c(2,3,6)]
 df4$wday <- wday(df4$date, week_start = 1)
 df4$weekday <- weekdays(df4$date)
@@ -415,5 +341,5 @@ p4 <- p4 + facet_wrap(vars(day_type), nrow = 2)
 p4
 ```
 
-![plot of chunk unnamed-chunk-25](figure/unnamed-chunk-25-1.png)
+![plot of chunk unnamed-chunk-41](figure/unnamed-chunk-41-1.png)
 

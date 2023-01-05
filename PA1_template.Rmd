@@ -5,6 +5,14 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
+Libraries:
+```{r echo=FALSE}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+```
+
+
 ## Loading and preprocessing the data
 Data was obtained forking the repository [https://github.com/rdpeng/RepData_PeerAssessment1](https://github.com/rdpeng/RepData_PeerAssessment1).
 
@@ -53,32 +61,35 @@ mean(is.na(df$steps))
 
 ## What is mean total number of steps taken per day?
 
-Total number of steps counted:
-
+`
+Group steps by date and then summarize mean and sum:
 ```{r}
-sum(df$steps, na.rm = T)
+steps_day <- df %>% group_by(date) %>% summarise('steps_mean' = mean(steps, na.rm = T), 'steps_total' = sum(steps, na.rm = T))
 ```
+
+
+
 Histogram of steps per day:
 
 ```{r}
-library(ggplot2)
-p1 <- ggplot(df, aes(x=steps)) 
-p1 <- p1 + geom_histogram(bins = 100, na.rm = T)
+
+p1 <- ggplot(steps_day, aes(x=steps_total)) 
+p1 <- p1 + geom_histogram(bins = 30, na.rm = T)
 p1
 ```
 
 Mean and Median of steps:
 
 ```{r}
-mean(df$steps, na.rm = T)
-median(df$steps, na.rm = T)
+mean(steps_day$steps_total, na.rm = T)
+median(steps_day$steps_total, na.rm = T)
 ```
 
 
 ## What is the average daily activity pattern?
 
 ```{r}
-library(dplyr)
+
 steps_interval <- df %>% group_by(interval) %>% summarise('steps_mean' = mean(steps, na.rm = T), 'steps_median' = median(steps, na.rm = T))
 summary(steps_interval)
 ```
@@ -93,7 +104,7 @@ p2
 Interval with maximum average of steps:
 
 ```{r}
-which.max(steps_interval$steps_mean)
+steps_interval[which.max(steps_interval$steps_mean),]
 ```
 
 ## Imputing missing values
@@ -104,14 +115,16 @@ which.max(steps_interval$steps_mean)
 df1 <- left_join(df, steps_interval, by= "interval")
 df1$steps_no_na <- ifelse(is.na(df1$steps), df1$steps_mean, df1$steps)
 
-summary(df1)
+steps_day1 <- df1 %>% group_by(date) %>% summarise('steps_mean' = mean(steps_no_na, na.rm = T), 'steps_total' = sum(steps_no_na, na.rm = T))
+
+summary(steps_day1)
 ```
 
 Histogram of steps per day, after replacing NA's:
 
 ```{r}
-library(ggplot2)
-p1 <- ggplot(df1, aes(x=steps_no_na)) 
+
+p1 <- ggplot(steps_day1, aes(x=steps_total)) 
 p1 <- p1 + geom_histogram(bins = 100, na.rm = T)
 p1
 ```
@@ -120,53 +133,29 @@ p1
 Mean and Median of steps:
 
 ```{r}
-mean(df1$steps_no_na, na.rm = T)
-median(df1$steps_no_na, na.rm = T)
+mean(steps_day1$steps_total, na.rm = T)
+median(steps_day1$steps_total, na.rm = T)
 ```
 
-There is no difference in mean and median (although the 3rd quantile is now 27, instead of 12)
+Both mean and median increased.
 
-###Replacing NA's with median of interval:
-
-```{r}
-df2 <- left_join(df, steps_interval, by= "interval")
-df2$steps_no_na <- ifelse(is.na(df2$steps), df2$steps_median, df2$steps)
-#names(df2) <- c('steps', 'date', 'interval', 'steps_avg_interval', 'steps_no_na')
-summary(df2)
-```
-
-Histogram of steps per day, after replacing NA's:
-
-```{r}
-library(ggplot2)
-p2 <- ggplot(df2, aes(x=steps_no_na)) 
-p2 <- p2 + geom_histogram(bins = 100, na.rm = T)
-p2
-```
-
-
-Mean and Median of steps:
-
-```{r}
-mean(df2$steps_no_na, na.rm = T)
-median(df2$steps_no_na, na.rm = T)
-```
 
 ###Replacing NA's with total of daily steps:
 
 ```{r}
-steps_day <- df %>% group_by(date) %>% summarise('steps_mean' = mean(steps, na.rm = T), 'steps_total' = sum(steps, na.rm = T))
+
 df3 <- left_join(df, steps_day, by= "date")
 df3$steps_no_na <- ifelse(is.na(df3$steps), df3$steps_total, df3$steps)
-#names(df2) <- c('steps', 'date', 'interval', 'steps_avg_interval', 'steps_no_na')
-summary(df3)
+
+steps_day3 <- df3 %>% group_by(date) %>% summarise('steps_mean' = mean(steps_no_na, na.rm = T), 'steps_total' = sum(steps_no_na, na.rm = T))
+
+summary(steps_day3)
 ```
 
 Histogram of steps per day, after replacing NA's:
 
 ```{r}
-library(ggplot2)
-p3 <- ggplot(df3, aes(x=steps_no_na)) 
+p3 <- ggplot(steps_day3, aes(x=steps_total)) 
 p3 <- p3 + geom_histogram(bins = 100, na.rm = T)
 p3
 ```
@@ -175,15 +164,14 @@ p3
 Mean and Median of steps:
 
 ```{r}
-mean(df3$steps_no_na, na.rm = T)
-median(df3$steps_no_na, na.rm = T)
+mean(steps_day3$steps_total, na.rm = T)
+median(steps_day3$steps_total, na.rm = T)
 ```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ```{r}
-library(lubridate)
 df4 <- df1[,c(2,3,6)]
 df4$wday <- wday(df4$date, week_start = 1)
 df4$weekday <- weekdays(df4$date)
